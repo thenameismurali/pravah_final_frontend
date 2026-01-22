@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { MapContainer, Marker, TileLayer } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+
 import GridLayer from "../components/Home/GridLayer";
 import { api } from "../api/events";
 import { extractLatLng, getDistanceKm } from "../utils/geo";
@@ -17,7 +19,7 @@ const MapPage = () => {
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
         }),
-      () => alert("Allow location access")
+      () => alert("Please allow location access")
     );
 
     api.get("/events").then((res) => setEvents(res.data));
@@ -25,14 +27,14 @@ const MapPage = () => {
 
   if (!userLocation) {
     return (
-      <div style={{ textAlign: "center", marginTop: 40 }}>
+      <div className="text-center mt-10">
         Loading map…
       </div>
     );
   }
 
   return (
-    <div style={{ position: "relative", height: "100vh" }}>
+    <div className="relative h-screen">
       <MapContainer
         center={userLocation}
         zoom={13}
@@ -45,7 +47,7 @@ const MapPage = () => {
           attribution="© OpenStreetMap contributors"
         />
 
-        {/* GRID */}
+        {/* GRID OVERLAY */}
         <GridLayer />
 
         {/* USER LOCATION */}
@@ -54,13 +56,13 @@ const MapPage = () => {
           icon={userIcon}
           eventHandlers={{
             click: (e) => {
-              e?.originalEvent?.stopPropagation();
+              e.originalEvent.stopPropagation();
               setSelected({ type: "user" });
             },
           }}
         />
 
-        {/* EVENTS */}
+        {/* EVENT MARKERS */}
         {events.map((event) => {
           const coords = extractLatLng(event.location);
           if (!coords) return null;
@@ -79,12 +81,8 @@ const MapPage = () => {
               icon={eventIcon}
               eventHandlers={{
                 click: (e) => {
-                  e?.originalEvent?.stopPropagation(); // ✅ SAFE
-                  setSelected({
-                    ...event,
-                    distance,
-                    type: "event",
-                  });
+                  e.originalEvent.stopPropagation();
+                  setSelected({ ...event, distance, type: "event" });
                 },
               }}
             />
@@ -92,48 +90,29 @@ const MapPage = () => {
         })}
       </MapContainer>
 
-      {/* CARD ABOVE MAP */}
+      {/* INFO CARD */}
       {selected && (
         <div
-          style={{
-            position: "absolute",
-            top: 20,
-            left: "50%",
-            transform: "translateX(-50%)",
-            zIndex: 9999,
-            background: "#fff",
-            padding: 16,
-            borderRadius: 16,
-            width: "90%",
-            maxWidth: 380,
-            boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
-          }}
+          className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000]
+                     bg-white rounded-2xl shadow-xl p-4 w-[90%] max-w-sm"
         >
           {selected.type === "user" ? (
             <>
-              <h3>Your Location</h3>
-              <p>You are here</p>
+              <h3 className="font-semibold text-lg">Your Location</h3>
+              <p className="text-sm text-gray-600">You are here</p>
             </>
           ) : (
             <>
-              <h3>{selected.title}</h3>
-              <p>{selected.venue}</p>
-              <p>{selected.description}</p>
+              <h3 className="font-semibold text-lg">{selected.title}</h3>
+              <p className="text-sm text-gray-600">{selected.venue}</p>
+              <p className="text-sm mt-1">{selected.description}</p>
+              <p className="text-sm mt-1">
+                {selected.distance.toFixed(2)} km away
+              </p>
 
-              {typeof selected.distance === "number" && (
-                <p>{selected.distance.toFixed(2)} km away</p>
-              )}
-
-              <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+              <div className="flex gap-2 mt-3">
                 <button
-                  style={{
-                    flex: 1,
-                    background: "#166534",
-                    color: "#fff",
-                    padding: 8,
-                    borderRadius: 8,
-                    border: "none",
-                  }}
+                  className="flex-1 bg-green-700 text-white py-2 rounded-xl"
                   onClick={() =>
                     (window.location.href = `/chat/${selected.chatId}`)
                   }
@@ -145,15 +124,8 @@ const MapPage = () => {
                   href={selected.location}
                   target="_blank"
                   rel="noreferrer"
-                  style={{
-                    flex: 1,
-                    border: "1px solid #166534",
-                    color: "#166534",
-                    padding: 8,
-                    borderRadius: 8,
-                    textAlign: "center",
-                    textDecoration: "none",
-                  }}
+                  className="flex-1 border border-green-700 text-green-700
+                             py-2 rounded-xl text-center"
                 >
                   Directions
                 </a>

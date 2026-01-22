@@ -1,26 +1,43 @@
+// src/utils/geo.js
+
+// ✅ Extract latitude & longitude from Google Maps URLs
 export const extractLatLng = (url) => {
   if (!url) return null;
 
+  // ?q=lat,lng
   let match = url.match(/[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/);
   if (match) {
-    return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+    return {
+      lat: parseFloat(match[1]),
+      lng: parseFloat(match[2]),
+    };
   }
 
+  // @lat,lng
   match = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
   if (match) {
-    return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+    return {
+      lat: parseFloat(match[1]),
+      lng: parseFloat(match[2]),
+    };
   }
 
+  // !3dlat!4dlng  (MOST IMPORTANT FOR YOUR LINK)
   match = url.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
   if (match) {
-    return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+    return {
+      lat: parseFloat(match[1]),
+      lng: parseFloat(match[2]),
+    };
   }
 
   return null;
 };
 
+// ✅ Distance calculation (REQUIRED — prevents build error)
 export const getDistanceKm = (lat1, lon1, lat2, lon2) => {
-  const R = 6371;
+  const R = 6371; // Earth radius in km
+
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
 
