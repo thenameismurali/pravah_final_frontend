@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../api/api";
-import "./eventDetails.css";
+import "./eventdetails.css";
 
 const EventDetails = () => {
   const { id } = useParams();
