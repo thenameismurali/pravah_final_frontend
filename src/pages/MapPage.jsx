@@ -12,14 +12,23 @@ import { api } from "../api/events";
 import { extractLatLng, getDistanceKm } from "../utils/geo";
 import { userIcon, eventIcon } from "../utils/mapIcons";
 
-/* 🔥 AUTO FIT MAP TO USER + EVENTS */
+/* 🔥 FIT BOUNDS — EVENTS ONLY (FIXES MOBILE ISSUE) */
 const FitBounds = ({ points }) => {
   const map = useMap();
 
   useEffect(() => {
-    if (points.length > 0) {
-      map.fitBounds(points, { padding: [60, 60] });
-    }
+    if (!points || points.length === 0) return;
+
+    const timeout = setTimeout(() => {
+      map.invalidateSize();
+      map.fitBounds(points, {
+        paddingTopLeft: [40, 140],
+        paddingBottomRight: [40, 140],
+        maxZoom: 16, // 🔥 prevents crazy zoom-out on mobile
+      });
+    }, 600);
+
+    return () => clearTimeout(timeout);
   }, [points, map]);
 
   return null;
@@ -30,6 +39,7 @@ const MapPage = () => {
   const [events, setEvents] = useState([]);
   const [selected, setSelected] = useState(null);
 
+  /* GET USER LOCATION + EVENTS */
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
       (pos) =>
@@ -51,14 +61,11 @@ const MapPage = () => {
     );
   }
 
-  /* 🔥 COLLECT ALL POINTS FOR FIT BOUNDS */
-  const allPoints = [
-    [userLocation.lat, userLocation.lng],
-    ...events
-      .map((e) => extractLatLng(e.location))
-      .filter(Boolean)
-      .map((c) => [c.lat, c.lng]),
-  ];
+  /* 🔥 EVENT POINTS ONLY (NO USER LOCATION HERE) */
+  const eventPoints = events
+    .map((e) => extractLatLng(e.location))
+    .filter(Boolean)
+    .map((c) => [c.lat, c.lng]);
 
   return (
     <div className="relative h-screen">
@@ -66,6 +73,8 @@ const MapPage = () => {
         center={userLocation}
         zoom={13}
         zoomControl={false}
+        scrollWheelZoom={false}
+        tap={false}
         style={{ height: "100%", width: "100%" }}
       >
         {/* BASE MAP */}
@@ -77,10 +86,12 @@ const MapPage = () => {
         {/* GRID OVERLAY */}
         <GridLayer />
 
-        {/* AUTO FIT */}
-        <FitBounds points={allPoints} />
+        {/* AUTO FIT — EVENTS ONLY */}
+        {eventPoints.length > 0 && (
+          <FitBounds points={eventPoints} />
+        )}
 
-        {/* USER LOCATION */}
+        {/* USER PIN */}
         <Marker
           position={userLocation}
           icon={userIcon}
@@ -92,7 +103,7 @@ const MapPage = () => {
           }}
         />
 
-        {/* EVENT MARKERS */}
+        {/* EVENT PINS */}
         {events.map((event) => {
           const coords = extractLatLng(event.location);
           if (!coords) return null;
@@ -124,7 +135,7 @@ const MapPage = () => {
         })}
       </MapContainer>
 
-      {/* INFO CARD (ABOVE MAP) */}
+      {/* INFO CARD */}
       {selected && (
         <div
           className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000]
@@ -178,6 +189,15 @@ const MapPage = () => {
           )}
         </div>
       )}
+
+      {/* 📍 MANUAL RECENTER (SAFE FALLBACK) */}
+      <button
+        className="absolute bottom-24 right-4 z-[1000]
+                   bg-white shadow-lg rounded-full p-3"
+        onClick={() => window.location.reload()}
+      >
+        📍
+      </button>
     </div>
   );
 };

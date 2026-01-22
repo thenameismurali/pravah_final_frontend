@@ -1,34 +1,15 @@
 export const extractLatLng = (url) => {
   if (!url || typeof url !== "string") return null;
 
-  // 1️⃣ @lat,lng (most common)
   let match = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-  if (match) {
-    return {
-      lat: parseFloat(match[1]),
-      lng: parseFloat(match[2]),
-    };
-  }
+  if (match) return { lat: +match[1], lng: +match[2] };
 
-  // 2️⃣ !3dlat!4dlng (Google place URLs)
-  match = url.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
-  if (match) {
-    return {
-      lat: parseFloat(match[1]),
-      lng: parseFloat(match[2]),
-    };
-  }
-
-  // 3️⃣ !8m2!3dlat!4dlng (YOUR CASE 🔥)
   match = url.match(/!8m2!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
-  if (match) {
-    return {
-      lat: parseFloat(match[1]),
-      lng: parseFloat(match[2]),
-    };
-  }
+  if (match) return { lat: +match[1], lng: +match[2] };
 
-  // ❌ fallback
+  match = url.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+  if (match) return { lat: +match[1], lng: +match[2] };
+
   return null;
 };
 
