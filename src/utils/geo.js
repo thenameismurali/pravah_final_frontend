@@ -1,11 +1,8 @@
-// src/utils/geo.js
-
-// ✅ Extract latitude & longitude from Google Maps URLs
 export const extractLatLng = (url) => {
-  if (!url) return null;
+  if (!url || typeof url !== "string") return null;
 
-  // ?q=lat,lng
-  let match = url.match(/[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/);
+  // 1️⃣ @lat,lng (most common)
+  let match = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
   if (match) {
     return {
       lat: parseFloat(match[1]),
@@ -13,16 +10,7 @@ export const extractLatLng = (url) => {
     };
   }
 
-  // @lat,lng
-  match = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-  if (match) {
-    return {
-      lat: parseFloat(match[1]),
-      lng: parseFloat(match[2]),
-    };
-  }
-
-  // !3dlat!4dlng  (MOST IMPORTANT FOR YOUR LINK)
+  // 2️⃣ !3dlat!4dlng (Google place URLs)
   match = url.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
   if (match) {
     return {
@@ -31,13 +19,21 @@ export const extractLatLng = (url) => {
     };
   }
 
+  // 3️⃣ !8m2!3dlat!4dlng (YOUR CASE 🔥)
+  match = url.match(/!8m2!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+  if (match) {
+    return {
+      lat: parseFloat(match[1]),
+      lng: parseFloat(match[2]),
+    };
+  }
+
+  // ❌ fallback
   return null;
 };
 
-// ✅ Distance calculation (REQUIRED — prevents build error)
 export const getDistanceKm = (lat1, lon1, lat2, lon2) => {
-  const R = 6371; // Earth radius in km
-
+  const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
 
