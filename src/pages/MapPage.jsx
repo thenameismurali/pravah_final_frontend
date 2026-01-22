@@ -12,14 +12,22 @@ import { api } from "../api/events";
 import { extractLatLng, getDistanceKm } from "../utils/geo";
 import { userIcon, eventIcon } from "../utils/mapIcons";
 
-/* 🔥 AUTO FIT MAP TO USER + EVENTS */
+/* 🔥 MOBILE + DESKTOP SAFE FIT BOUNDS */
 const FitBounds = ({ points }) => {
   const map = useMap();
 
   useEffect(() => {
-    if (points.length > 0) {
-      map.fitBounds(points, { padding: [60, 60] });
-    }
+    if (!points.length) return;
+
+    const timeout = setTimeout(() => {
+      map.invalidateSize(); // 🔥 CRITICAL FOR MOBILE
+      map.fitBounds(points, {
+        paddingTopLeft: [40, 140],   // space for top card
+        paddingBottomRight: [40, 140], // space for bottom nav
+      });
+    }, 600); // allow layout to settle on mobile
+
+    return () => clearTimeout(timeout);
   }, [points, map]);
 
   return null;
@@ -30,6 +38,7 @@ const MapPage = () => {
   const [events, setEvents] = useState([]);
   const [selected, setSelected] = useState(null);
 
+  /* 🔥 GET USER LOCATION + EVENTS */
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
       (pos) =>
@@ -51,7 +60,7 @@ const MapPage = () => {
     );
   }
 
-  /* 🔥 COLLECT ALL POINTS FOR FIT BOUNDS */
+  /* 🔥 COLLECT ALL POINTS */
   const allPoints = [
     [userLocation.lat, userLocation.lng],
     ...events
@@ -65,6 +74,8 @@ const MapPage = () => {
       <MapContainer
         center={userLocation}
         zoom={13}
+        scrollWheelZoom={false}
+        tap={false} // 🔥 MOBILE TOUCH FIX
         zoomControl={false}
         style={{ height: "100%", width: "100%" }}
       >
@@ -80,7 +91,7 @@ const MapPage = () => {
         {/* AUTO FIT */}
         <FitBounds points={allPoints} />
 
-        {/* USER LOCATION */}
+        {/* USER PIN */}
         <Marker
           position={userLocation}
           icon={userIcon}
@@ -92,7 +103,7 @@ const MapPage = () => {
           }}
         />
 
-        {/* EVENT MARKERS */}
+        {/* EVENT PINS */}
         {events.map((event) => {
           const coords = extractLatLng(event.location);
           if (!coords) return null;
@@ -124,7 +135,7 @@ const MapPage = () => {
         })}
       </MapContainer>
 
-      {/* INFO CARD (ABOVE MAP) */}
+      {/* INFO CARD */}
       {selected && (
         <div
           className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000]
@@ -178,6 +189,15 @@ const MapPage = () => {
           )}
         </div>
       )}
+
+      {/* 📍 MOBILE RECENTER BUTTON */}
+      <button
+        className="absolute bottom-24 right-4 z-[1000]
+                   bg-white shadow-lg rounded-full p-3"
+        onClick={() => window.location.reload()}
+      >
+        📍
+      </button>
     </div>
   );
 };
