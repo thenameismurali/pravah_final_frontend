@@ -12,21 +12,20 @@ import { api } from "../api/events";
 import { extractLatLng, getDistanceKm } from "../utils/geo";
 import { userIcon, eventIcon } from "../utils/mapIcons";
 
-/* 🔥 FIT BOUNDS — EVENTS ONLY (FIXES MOBILE ISSUE) */
+/* 🔥 MOBILE + DESKTOP SAFE FIT BOUNDS */
 const FitBounds = ({ points }) => {
   const map = useMap();
 
   useEffect(() => {
-    if (!points || points.length === 0) return;
+    if (!points.length) return;
 
     const timeout = setTimeout(() => {
-      map.invalidateSize();
+      map.invalidateSize(); // 🔥 CRITICAL FOR MOBILE
       map.fitBounds(points, {
-        paddingTopLeft: [40, 140],
-        paddingBottomRight: [40, 140],
-        maxZoom: 16, // 🔥 prevents crazy zoom-out on mobile
+        paddingTopLeft: [40, 140],   // space for top card
+        paddingBottomRight: [40, 140], // space for bottom nav
       });
-    }, 600);
+    }, 600); // allow layout to settle on mobile
 
     return () => clearTimeout(timeout);
   }, [points, map]);
@@ -39,7 +38,7 @@ const MapPage = () => {
   const [events, setEvents] = useState([]);
   const [selected, setSelected] = useState(null);
 
-  /* GET USER LOCATION + EVENTS */
+  /* 🔥 GET USER LOCATION + EVENTS */
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
       (pos) =>
@@ -61,20 +60,23 @@ const MapPage = () => {
     );
   }
 
-  /* 🔥 EVENT POINTS ONLY (NO USER LOCATION HERE) */
-  const eventPoints = events
-    .map((e) => extractLatLng(e.location))
-    .filter(Boolean)
-    .map((c) => [c.lat, c.lng]);
+  /* 🔥 COLLECT ALL POINTS */
+  const allPoints = [
+    [userLocation.lat, userLocation.lng],
+    ...events
+      .map((e) => extractLatLng(e.location))
+      .filter(Boolean)
+      .map((c) => [c.lat, c.lng]),
+  ];
 
   return (
     <div className="relative h-screen">
       <MapContainer
         center={userLocation}
         zoom={13}
-        zoomControl={false}
         scrollWheelZoom={false}
-        tap={false}
+        tap={false} // 🔥 MOBILE TOUCH FIX
+        zoomControl={false}
         style={{ height: "100%", width: "100%" }}
       >
         {/* BASE MAP */}
@@ -86,10 +88,8 @@ const MapPage = () => {
         {/* GRID OVERLAY */}
         <GridLayer />
 
-        {/* AUTO FIT — EVENTS ONLY */}
-        {eventPoints.length > 0 && (
-          <FitBounds points={eventPoints} />
-        )}
+        {/* AUTO FIT */}
+        <FitBounds points={allPoints} />
 
         {/* USER PIN */}
         <Marker
@@ -190,7 +190,7 @@ const MapPage = () => {
         </div>
       )}
 
-      {/* 📍 MANUAL RECENTER (SAFE FALLBACK) */}
+      {/* 📍 MOBILE RECENTER BUTTON */}
       <button
         className="absolute bottom-24 right-4 z-[1000]
                    bg-white shadow-lg rounded-full p-3"
