@@ -1,27 +1,13 @@
 import L from "leaflet";
 
-export const userIcon = new L.DivIcon({
-  className: "z-50",
-  html: `
-    <div style="
-      width:18px;
-      height:18px;
-      background:#2563EB;
-      border:4px solid rgba(37,99,235,0.35);
-      border-radius:50%;
-    "></div>
-  `,
+export const userIcon = new L.Icon({
+  iconUrl: "https://cdn-icons-png.flaticon.com/512/64/64113.png",
+  iconSize: [35, 35],
+  iconAnchor: [17, 35],
 });
 
-export const eventIcon = new L.DivIcon({
-  className: "z-50",
-  html: `
-    <div style="
-      width:22px;
-      height:22px;
-      background:#166534;
-      border-radius:50% 50% 50% 0;
-      transform: rotate(-45deg);
-    "></div>
-  `,
+export const eventIcon = new L.Icon({
+  iconUrl: "https://cdn-icons-png.flaticon.com/512/684/684908.png",
+  iconSize: [40, 40],
+  iconAnchor: [20, 40],
 });

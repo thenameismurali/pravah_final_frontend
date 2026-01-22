@@ -1,11 +1,29 @@
 import { useEffect, useState } from "react";
-import { MapContainer, Marker, TileLayer } from "react-leaflet";
+import {
+  MapContainer,
+  Marker,
+  TileLayer,
+  useMap,
+} from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
 import GridLayer from "../components/Home/GridLayer";
 import { api } from "../api/events";
 import { extractLatLng, getDistanceKm } from "../utils/geo";
 import { userIcon, eventIcon } from "../utils/mapIcons";
+
+/* 🔥 AUTO FIT MAP TO USER + EVENTS */
+const FitBounds = ({ points }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    if (points.length > 0) {
+      map.fitBounds(points, { padding: [60, 60] });
+    }
+  }, [points, map]);
+
+  return null;
+};
 
 const MapPage = () => {
   const [userLocation, setUserLocation] = useState(null);
@@ -27,11 +45,20 @@ const MapPage = () => {
 
   if (!userLocation) {
     return (
-      <div className="text-center mt-10">
+      <div className="text-center mt-10 text-gray-600">
         Loading map…
       </div>
     );
   }
+
+  /* 🔥 COLLECT ALL POINTS FOR FIT BOUNDS */
+  const allPoints = [
+    [userLocation.lat, userLocation.lng],
+    ...events
+      .map((e) => extractLatLng(e.location))
+      .filter(Boolean)
+      .map((c) => [c.lat, c.lng]),
+  ];
 
   return (
     <div className="relative h-screen">
@@ -49,6 +76,9 @@ const MapPage = () => {
 
         {/* GRID OVERLAY */}
         <GridLayer />
+
+        {/* AUTO FIT */}
+        <FitBounds points={allPoints} />
 
         {/* USER LOCATION */}
         <Marker
@@ -82,7 +112,11 @@ const MapPage = () => {
               eventHandlers={{
                 click: (e) => {
                   e.originalEvent.stopPropagation();
-                  setSelected({ ...event, distance, type: "event" });
+                  setSelected({
+                    ...event,
+                    distance,
+                    type: "event",
+                  });
                 },
               }}
             />
@@ -90,7 +124,7 @@ const MapPage = () => {
         })}
       </MapContainer>
 
-      {/* INFO CARD */}
+      {/* INFO CARD (ABOVE MAP) */}
       {selected && (
         <div
           className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000]
@@ -98,14 +132,24 @@ const MapPage = () => {
         >
           {selected.type === "user" ? (
             <>
-              <h3 className="font-semibold text-lg">Your Location</h3>
-              <p className="text-sm text-gray-600">You are here</p>
+              <h3 className="font-semibold text-lg">
+                Your Location
+              </h3>
+              <p className="text-sm text-gray-600">
+                You are here
+              </p>
             </>
           ) : (
             <>
-              <h3 className="font-semibold text-lg">{selected.title}</h3>
-              <p className="text-sm text-gray-600">{selected.venue}</p>
-              <p className="text-sm mt-1">{selected.description}</p>
+              <h3 className="font-semibold text-lg">
+                {selected.title}
+              </h3>
+              <p className="text-sm text-gray-600">
+                {selected.venue}
+              </p>
+              <p className="text-sm mt-1">
+                {selected.description}
+              </p>
               <p className="text-sm mt-1">
                 {selected.distance.toFixed(2)} km away
               </p>
