@@ -1,8 +1,9 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import {
   MapContainer,
   Marker,
   TileLayer,
+  useMap,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -11,15 +12,24 @@ import { api } from "../api/events";
 import { extractLatLng, getDistanceKm } from "../utils/geo";
 import { userIcon, eventIcon } from "../utils/mapIcons";
 
-const MapPage = () => {
-  const mapRef = useRef(null);
+/* 🔥 AUTO FIT MAP TO USER + EVENTS */
+const FitBounds = ({ points }) => {
+  const map = useMap();
 
+  useEffect(() => {
+    if (points.length > 0) {
+      map.fitBounds(points, { padding: [60, 60] });
+    }
+  }, [points, map]);
+
+  return null;
+};
+
+const MapPage = () => {
   const [userLocation, setUserLocation] = useState(null);
   const [events, setEvents] = useState([]);
   const [selected, setSelected] = useState(null);
-  const [mapReady, setMapReady] = useState(false);
 
-  /* 1️⃣ Get location */
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
       (pos) =>
@@ -29,37 +39,9 @@ const MapPage = () => {
         }),
       () => alert("Please allow location access")
     );
-  }, []);
 
-  /* 2️⃣ Fetch events */
-  useEffect(() => {
     api.get("/events").then((res) => setEvents(res.data));
   }, []);
-
-  /* 3️⃣ Fit bounds ONLY when everything is ready */
-  useEffect(() => {
-    if (!mapRef.current) return;
-    if (!userLocation) return;
-
-    const coords = events
-      .map((e) => extractLatLng(e.location))
-      .filter(Boolean);
-
-    if (coords.length === 0) return;
-
-    const bounds = [
-      [userLocation.lat, userLocation.lng],
-      ...coords.map((c) => [c.lat, c.lng]),
-    ];
-
-    setTimeout(() => {
-      mapRef.current.invalidateSize();
-      mapRef.current.fitBounds(bounds, {
-        paddingTopLeft: [40, 120],
-        paddingBottomRight: [40, 160],
-      });
-    }, 800); // 🔥 mobile-safe delay
-  }, [userLocation, events]);
 
   if (!userLocation) {
     return (
@@ -69,28 +51,36 @@ const MapPage = () => {
     );
   }
 
+  /* 🔥 COLLECT ALL POINTS FOR FIT BOUNDS */
+  const allPoints = [
+    [userLocation.lat, userLocation.lng],
+    ...events
+      .map((e) => extractLatLng(e.location))
+      .filter(Boolean)
+      .map((c) => [c.lat, c.lng]),
+  ];
+
   return (
     <div className="relative h-screen">
       <MapContainer
         center={userLocation}
         zoom={13}
         zoomControl={false}
-        scrollWheelZoom={false}
-        tap={false}
         style={{ height: "100%", width: "100%" }}
-        whenCreated={(map) => {
-          mapRef.current = map;
-          setMapReady(true);
-        }}
       >
+        {/* BASE MAP */}
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution="© OpenStreetMap contributors"
         />
 
+        {/* GRID OVERLAY */}
         <GridLayer />
 
-        {/* USER PIN */}
+        {/* AUTO FIT */}
+        <FitBounds points={allPoints} />
+
+        {/* USER LOCATION */}
         <Marker
           position={userLocation}
           icon={userIcon}
@@ -102,7 +92,7 @@ const MapPage = () => {
           }}
         />
 
-        {/* EVENT PINS */}
+        {/* EVENT MARKERS */}
         {events.map((event) => {
           const coords = extractLatLng(event.location);
           if (!coords) return null;
@@ -134,10 +124,12 @@ const MapPage = () => {
         })}
       </MapContainer>
 
-      {/* INFO CARD */}
+      {/* INFO CARD (ABOVE MAP) */}
       {selected && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000]
-                        bg-white rounded-2xl shadow-xl p-4 w-[90%] max-w-sm">
+        <div
+          className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000]
+                     bg-white rounded-2xl shadow-xl p-4 w-[90%] max-w-sm"
+        >
           {selected.type === "user" ? (
             <>
               <h3 className="font-semibold text-lg">
@@ -186,15 +178,6 @@ const MapPage = () => {
           )}
         </div>
       )}
-
-      {/* 📍 RECENTER (mobile fallback) */}
-      <button
-        className="absolute bottom-24 right-4 z-[1000]
-                   bg-white shadow-lg rounded-full p-3"
-        onClick={() => window.location.reload()}
-      >
-        📍
-      </button>
     </div>
   );
 };
