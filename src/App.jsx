@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import Home from "./components/Home/Home";
 import EventsPage from "./pages/EventsPage";
@@ -23,13 +23,20 @@ function App() {
 
         {/* APP ROUTES WITH BOTTOM NAV */}
         <Route element={<MainLayout />}>
-          <Route path="/" element={<Home />} />
+
+          {/* ROOT → SIGNUP */}
+          <Route path="/" element={<Navigate to="/signup" replace />} />
+
+          {/* HOME PAGE */}
+          <Route path="/home" element={<Home />} />
+
           <Route path="/events" element={<EventsPage />} />
           <Route path="/calendar" element={<Calendar />} />
           <Route path="/events/:id" element={<EventDetails />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/groups" element={<Groups />} />
           <Route path="/map" element={<MapPage />} />
+
         </Route>
 
         {/* CHAT (NO BOTTOM NAV) */}
