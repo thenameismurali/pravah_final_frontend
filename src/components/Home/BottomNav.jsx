@@ -8,8 +8,8 @@ const BottomNav = () => {
     <nav className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-white shadow-lg rounded-full px-6 py-3 flex gap-6 z-50">
       <NavIcon
         icon={<Home />}
-        active={location.pathname === "/"}
-        onClick={() => navigate("/")}
+        active={location.pathname === "/home"}
+        onClick={() => navigate("/home")}
       />
 
       <NavIcon

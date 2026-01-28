@@ -16,7 +16,7 @@ const handleSubmit = async (e) => {
   localStorage.setItem("token", res.data.token);
   localStorage.setItem("user", JSON.stringify(res.data.user));
 
-  window.location.href = "/";
+  window.location.href = "/home";
 };
 
 
@@ -52,7 +52,7 @@ const handleSubmit = async (e) => {
 
       <div className={styles.footer}>
         Don’t have an account?{" "}
-        <a href="/signup" className={styles.link}>
+        <a href="/" className={styles.link}>
           Sign Up
         </a>
       </div>
